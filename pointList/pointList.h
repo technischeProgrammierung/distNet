@@ -25,4 +25,7 @@ PointList_t *newPointList();
 /*append a PointItem to a PointList*/
 void appendPointItem(PointList_t*, PointItem_t*);
 
+/*check if the list contains a Point that has equal X an Y Values as the Point given as a parameter*/
+int contains(PointList_t*, Point_t*);
+
 #endif

@@ -41,4 +41,20 @@ void appendPointItem(PointList_t* list, PointItem_t* item)
     }
 }
 
+int contains(PointList_t* list, Point_t* point)
+{
+    PointItem_t *ptr = list->listStart;
+
+        while(ptr != 0)
+        {
+            if(point->x == ptr->content->x && point->y == ptr->content->y)
+            {
+                return 1;
+            }
+            ptr = ptr->next;
+        }
+
+        return 0;
+}
+
 #endif

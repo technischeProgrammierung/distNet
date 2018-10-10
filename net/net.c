@@ -51,7 +51,7 @@ int isValidNet(Net_t *net)
         LineItem_t *compareLine = currentLine->next->next;
         for(int j = 0; j < (net->numOfNodes -3 ); j++)
         {
-            if(haveCrossing(currentLine->content, compareLine->content) != 0)
+            if(haveCrossing(currentLine->content, compareLine->content))
             {
                 printf(">Failed: Lines have crossings \n");   
                 return 0;
@@ -177,12 +177,18 @@ int isWithinNet(Net_t* net, Point_t* point)
         return 0;
     }
 
-    /*if the ray between the point and a point outisde the polygon
+    /*check if the point is equal to one of the nets nodes*/
+    if(contains(net->nodes, point))
+    {
+        return 1;
+    }
+
+     /*if the ray between the point and a point outisde the polygon
      *has an uneven number of intersections, the point is in the Polygon -> return 1
      *otherwise it is outside the Polygon -> return 0*/
-
     return(getRayCastIntersections(net, point) % 2);
 }
+
 
 int getRayCastIntersections(Net_t* net, Point_t* point)
 {
@@ -191,8 +197,6 @@ int getRayCastIntersections(Net_t* net, Point_t* point)
      * https://stackoverflow.com/questions/14130742/ray-through-vertex-special-case-when-detecting-point-in-polygon
     */
     
-
-
     /*create point that is definitely not in Polygon*/
     Point_t *outOfNet = newPoint((net->maxX + 1.0), point->y);
     Line_t *ray = newLine(point, outOfNet);
