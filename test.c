@@ -13,7 +13,7 @@ int main()
     netNodes[3] = *newPoint(2.5,4);
     netNodes[4] = *newPoint(0,5);
 
-    pointToBeChecked = *newPoint(5,5);
+    pointToBeChecked = *newPoint(2.5,4.2);
 
     for(int i = 0; i < 5; i++)
     {
@@ -21,17 +21,21 @@ int main()
     }
 
     printNet(&net);
+    
     if(isValidNet(&net))
     {
+        LineItem_t *ptr = net.lines->listStart;
         printf("The entered net is valid!\n");
 
         if(isWithinNet(&net, &pointToBeChecked))
         {
+            printf("The point ");
             printPoint(&pointToBeChecked);
             printf("is within the net! \n");
         }
         else
         {
+            printf("The point ");
             printPoint(&pointToBeChecked);
             printf("is NOT within the net! \n");
         }

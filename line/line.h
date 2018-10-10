@@ -33,8 +33,11 @@ Line_t *newLine(Point_t*, Point_t*);
 /*evaluates if a point is below above or on a line, returns a negative, positive or zero value accordingly*/
 double evalPoint(Line_t*, Point_t*);
 
-/*checks if two lines cross each other, if there is a crossing returns 1, otherwise returns 0*/
-int haveCrossing(Line_t*, Line_t*);
+/*checks if two lines cross each other, if there is an intersection returns 1, otherwise returns 0*/
+int haveIntersection(Line_t*, Line_t*);
+
+/*calculates the intersection of two lines*/
+Point_t* calcIntersection(Line_t*, Line_t*);
 
 /*prints a line in the form of an equation as mentioned above*/
 void printLine(Line_t*);

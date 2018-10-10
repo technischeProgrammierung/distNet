@@ -49,11 +49,11 @@ int isValidNet(Net_t *net)
     for (int i = 0; i < net->numOfNodes; i++)
     {
         LineItem_t *compareLine = currentLine->next->next;
-        for(int j = 0; j < (net->numOfNodes -3 ); j++)
+        for (int j = 0; j < (net->numOfNodes - 3); j++)
         {
-            if(haveCrossing(currentLine->content, compareLine->content))
+            if (haveIntersection(currentLine->content, compareLine->content))
             {
-                printf(">Failed: Lines have crossings \n");   
+                printf(">Failed: Lines have intersection \n");
                 return 0;
             }
             compareLine = compareLine->next;
@@ -84,8 +84,8 @@ int printNet(Net_t *net)
     }
 
     printf("-------------------------------\n");
-    printf("| %-5s | % .5f | % .5f |\n","max",net->maxX,net->maxY);
-    printf("| %-5s | % .5f | % .5f |\n","min",net->minX,net->minY);
+    printf("| %-5s | % .5f | % .5f |\n", "max", net->maxX, net->maxY);
+    printf("| %-5s | % .5f | % .5f |\n", "min", net->minX, net->minY);
     printf("-------------------------------\n");
     printf("| number of nodes: %10i |\n", net->numOfNodes);
     printf("-------------------------------\n");
@@ -100,7 +100,7 @@ int appendPoint(Net_t *net, Point_t *point)
     {
         appendPointItem(net->nodes, dummy);
 
-        if(net->numOfNodes == 0)
+        if (net->numOfNodes == 0)
         {
             net->maxX = getX(point);
             net->maxY = getY(point);
@@ -109,14 +109,14 @@ int appendPoint(Net_t *net, Point_t *point)
         }
         else
         {
-            if(getX(point) > net->maxX) 
+            if (getX(point) > net->maxX)
                 net->maxX = getX(point);
-            else if(getX(point) < net->minX)
+            else if (getX(point) < net->minX)
                 net->minX = getX(point);
 
-            if(getY(point) > net->maxY) 
+            if (getY(point) > net->maxY)
                 net->maxY = getY(point);
-            else if(getY(point) < net->minY)
+            else if (getY(point) < net->minY)
                 net->minY = getY(point);
         }
 
@@ -162,8 +162,7 @@ int generateLines(Net_t *net)
     return 1;
 }
 
-
-int isWithinNet(Net_t* net, Point_t* point)
+int isWithinNet(Net_t *net, Point_t *point)
 {
     if (net->lines->listStart == 0 || net->nodes->listStart == 0 || net->numOfNodes <= 2)
     {
@@ -172,53 +171,85 @@ int isWithinNet(Net_t* net, Point_t* point)
     }
 
     /*check if point is within max and min values of the net*/
-    if( getX(point) > net->maxX || getX(point) < net->minX || getY(point) > net->maxY || getY(point) < net->minY)
+    if (getX(point) > net->maxX || getX(point) < net->minX || getY(point) > net->maxY || getY(point) < net->minY)
     {
         return 0;
     }
 
     /*check if the point is equal to one of the nets nodes*/
-    if(contains(net->nodes, point))
+    if (contains(net->nodes, point))
     {
         return 1;
     }
 
-     /*if the ray between the point and a point outisde the polygon
+    /*if the ray between the point and a point outisde the polygon
      *has an uneven number of intersections, the point is in the Polygon -> return 1
      *otherwise it is outside the Polygon -> return 0*/
-    return(getRayCastIntersections(net, point) % 2);
-}
 
+    int rayCastIntersections = getRayCastIntersections(net, point);
 
-int getRayCastIntersections(Net_t* net, Point_t* point)
-{
-    /*TODO:
-     * correct behaviour if the ray hits differnt kinds of vertexes
-     * https://stackoverflow.com/questions/14130742/ray-through-vertex-special-case-when-detecting-point-in-polygon
-    */
-    
-    /*create point that is definitely not in Polygon*/
-    Point_t *outOfNet = newPoint((net->maxX + 1.0), point->y);
-    Line_t *ray = newLine(point, outOfNet);
-
-    int numOfCrossings = 0;
-
-    LineItem_t *ptr = net->lines->listStart;
-
-    /*check for intersections*/
-    for(int i = 0; i < net->numOfNodes; i++)
+    if(rayCastIntersections < 0)
     {
-        if(haveCrossing(ptr->content, ray))
-        {
-            numOfCrossings++;
-        }
-
-        ptr = ptr->next;
+        printf("raycast algorithm failed");
+        return 0;
     }
 
-    free(outOfNet);
-    free(ray);
+    return (rayCastIntersections % 2);
+}
 
+int getRayCastIntersections(Net_t *net, Point_t *point)
+{
+    int try = 0;
+    int numOfCrossings = 0;
+    int numOfVertexCrossings = -1;
+
+    /* Vertex intersections have to be handeled in a specific way
+     * (see https://stackoverflow.com/questions/14130742/ray-through-vertex-special-case-when-detecting-point-in-polygon)
+     * 
+     * they are therefore avoided by creating rays until no such intersection is found
+     */
+    while (numOfVertexCrossings != 0)
+    {
+        if(try > 1000)
+        {
+            //fail if too many tries were needed
+            return -1;
+        }
+        /*create point that is definitely not in Polygon and that varies each try*/
+        Point_t *outOfNet = newPoint((net->maxX + 1.0), (point->y + try));
+        Line_t *ray = newLine(point, outOfNet);
+
+        LineItem_t *ptr = net->lines->listStart;
+
+        numOfVertexCrossings = 0;
+        numOfCrossings = 0;
+
+        /*check for intersections*/
+        for (int i = 0; i < net->numOfNodes; i++)
+        {
+            if (haveIntersection(ptr->content, ray))
+            {
+                /*calculate intersection and check if it equals a vertex*/
+                Point_t *p = calcIntersection(ptr->content, ray);
+                if (p != 0 && contains(net->nodes, p))
+                {
+                    numOfVertexCrossings++;
+                }
+                else if(p != 0 && p->x == point->x && p->y == point->y)
+                {
+                    /*special case: point is on one of the lines of the net and therefore within the net*/
+                    return 1;
+                }
+                free(p);
+
+                numOfCrossings++;
+            }
+            ptr = ptr->next;
+        }
+        free(outOfNet);
+        free(ray);
+        try++;
+    }
     return numOfCrossings;
 }
 
